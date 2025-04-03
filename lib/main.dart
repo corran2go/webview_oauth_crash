@@ -13,23 +13,40 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'SSO Example',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('SSO Example')),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const SsoPage()));
+          },
+          child: const Text('Login with SSO'),
+        ),
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class SsoPage extends StatefulWidget {
+  const SsoPage({super.key});
+
+  @override
+  State<SsoPage> createState() => _SsoPageState();
+}
+
+class _SsoPageState extends State<SsoPage> {
   final adfsHost = 'stfs.bosch.com';
   final adfsAuthPath = '/adfs/oauth2/authorize';
   final clientId = 'xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx';
@@ -48,8 +65,11 @@ class _MyHomePageState extends State<MyHomePage> {
               onNavigationRequest: (request) {
                 final url = request.url;
                 debugPrint('Navigation to [$url]');
-                // Only allow navigation on $baseUrl/*
-                if (url.startsWith(redirectUrl)) {
+                // Only allow navigation on https://$adfsHost/*
+                if (url.startsWith('https://$adfsHost')) {
+                  return NavigationDecision.navigate;
+                  // Handle redirect via $redirectUrl
+                } else if (url.startsWith(redirectUrl)) {
                   try {
                     final token = _handleRedirect(url);
                     debugPrint('SSO login success');
@@ -59,7 +79,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                   return NavigationDecision.prevent;
                 }
-                return NavigationDecision.navigate;
+                debugPrint('Prevent navigation to [$url]');
+                return NavigationDecision.prevent;
               },
             ),
           )
